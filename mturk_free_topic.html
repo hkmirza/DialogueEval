@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <!-- uncomment the next line when deploying on MTurk -->
+    <!-- <script src="https://assets.crowd.aws/crowd-html-elements.js"></script>  -->
+    <script
+        src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+        crossorigin="anonymous"></script>
+    <!-- script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script> -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .btn-circle{
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 20px;
+            
+        }
+    </style>
+</head>
+<body id="main-body" style="background-color:#FFFFFF">
+    <div class="modal fade" tabindex="-1" role="dialog" id="warning-modal">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Not enough inputs yet!</h5>
+              </div>
+              <div class="modal-body d-flex align-items-top justify-content-start text-left">
+                Please make sure that you have entered at least 10 inputs/sentences before going to the next chatbot, thanks! The number of inputs you've entered so far is displayed at the top of the screen.
+                
+              </div>
+              <div class="modal-footer">
+               
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+    </div>
+    <div class="modal fade" tabindex="-1" role="dialog" id="error-modal">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Error</h5>
+              </div>
+              <div class="modal-body" id="error-modal-body">
+                <p>An error occurs and it has been recorded. Please close this warinng and re-try.</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="empty-modal">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Invalid input</h5>
+              </div>
+              <div class="modal-body">
+                <p>Your input is empty, please retry</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="topic-modal" data-keyboard="false" data-backdrop="static">
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h6 class="modal-title text-sm-left font-weight-bold" id="topic-modal-title">Please think of a topic to discuss with the chatbot and enter it below</h6>
+              </div>
+              <div class="modal-body" id="topic-modal-body">
+
+              </div>
+
+              <div class="modal-footer" id="topic-modal-footer">
+
+              </div>
+            </div>
+          </div>
+    </div>
+
+    <div id="chatbot-panel" class="container-fluid text-center">
+        <div id="instruction-panel" class="justify-content-center mt-1 border rounded">
+            <div class="row d-flex align-items-center justify-content-center">
+                
+                <div class="col d-flex align-items-center justify-content-center">
+                    <div id="task-counter">
+                        You have completed conversations with <b>0</b> chatbots.
+                    </div>
+                </div>
+                
+            </div>
+            <div class="row d-flex align-items-center justify-content-center">
+               
+                <div class="col d-flex align-items-center justify-content-center">
+                    <div id="round-counter">
+                        You have given <b>0</b> inputs already with this chatbot.
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+
+        <div id="message-panel" class="text-center border rounded" >
+
+        </div>
+        <div id="topic-panel" class="rounded" >
+            <div class="row d-flex align-items-center">
+
+                <div class="col-3 d-flex align-items-center justify-content-end text-truncate">Current Topic:</div>
+                <div class="col d-flex align-items-center justify-content-start text-truncate" id="topic-display"></div>
+                <div class="col-3 d-flex"></div>
+            </div>
+        </div>
+
+        <div class="text-center d-flex align-items-center justify-content-center" id="send-panel">
+            <div class="input-group">
+                <div class="input-group-append align-items-center">
+                    <button class="btn btn-sm btn-outline-success rounded mr-sm-1" type="button" onclick="show_topic_modal();">Topic</button>
+                </div>
+
+                <input type="text" autocomplete="off" 
+                class="form-control rounded mr-sm-1" placeholder="Please type here" 
+                id="send-input">
+
+                <div class="input-group-append align-items-center">
+                    <button 
+                    class="btn btn-sm btn-outline-primary rounded mr-sm-1" 
+                    type="button" id="send-btn" 
+                    onclick="send_response();">Send</button>
+                    <button 
+                    class="btn btn-sm btn-outline-info rounded" 
+                    type="button" id="rate-btn" 
+                    onclick="to_rate();">Next Chatbot</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+
+    <div class="container-fluid text-center" id="rate-panel">
+        <div id="instruction2-panel" class="justify-content-center mt-1 pt-3 pb-3 border-0 rounded">
+         Please say how much you agree with each of the following statements:
+        </div>
+        <div id="rate-slider-panel" class="justify-content-center mt-5 border rounded">
+            <div class="row d-flex align-items-center justify-content-center mt-2">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    
+                </div>
+                <div class="col d-flex align-items-center justify-content-start">
+                    It was obvious that I was talking to a chatbot as opposed to another human user.
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    
+                </div>
+            </div>
+            <div class="row d-flex align-items-center justify-content-center mb-4 mt-1">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    0
+                </div>
+                <div class="col d-flex align-items-center justify-content-center">
+                    <input type="range" class="form-control-range rate-range" id="humanlike_range">
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    100
+                </div>
+            </div>
+            <div class="row d-flex align-items-center justify-content-center mt-2">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    
+                </div>
+                <div class="col d-flex align-items-center justify-content-start">
+                    The conversation with the chatbot was interesting.
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    
+                </div>
+            </div>
+            <div class="row d-flex align-items-center justify-content-center mb-4 mt-1">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    0
+                </div>
+                <div class="col d-flex align-items-center justify-content-center">
+                    <input type="range" class="form-control-range rate-range" id="interest_range">
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    100
+                </div>
+            </div>
+
+            <div class="row d-flex align-items-center justify-content-center">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    
+                </div>
+                <div class="col d-flex align-items-center justify-content-start">
+                    The conversation with the chatbot was fun/enjoyable.
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    
+                </div>
+            </div>
+            <div class="row d-flex align-items-center justify-content-center mb-4 mt-1">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    0
+                </div>
+                <div class="col d-flex align-items-center justify-content-center">
+                    <input type="range" class="form-control-range rate-range" id="fun_range">
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    100
+                </div>
+            </div>
+
+            <div class="row d-flex align-items-center justify-content-center">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    
+                </div>
+                <div class="col d-flex align-items-center justify-content-start">
+                    The chatbot was consistent throughout the conversation.
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    
+                </div>
+            </div>
+            <div class="row d-flex align-items-center justify-content-center mb-4 mt-1">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    0
+                </div>
+                <div class="col d-flex align-items-center justify-content-center">
+                    <input type="range" class="form-control-range rate-range" id="consistent_range">
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    100
+                </div>
+            </div>
+
+            <div class="row d-flex align-items-center justify-content-center">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    
+                </div>
+                <div class="col d-flex align-items-center justify-content-start">
+                    The chatbot's English was fluent and natural throughout the conversation.
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    
+                </div>
+            </div>
+            <div class="row d-flex align-items-center justify-content-center mb-4 mt-1">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    0
+                </div>
+                <div class="col d-flex align-items-center justify-content-center">
+                    <input type="range" class="form-control-range rate-range" id="fluent_range">
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    100
+                </div>
+            </div>
+            <div class="row d-flex align-items-center justify-content-center">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    
+                </div>
+                <div class="col d-flex align-items-center justify-content-start">
+                    I felt that the chatbot kept being repetitive during the conversation.
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    
+                </div>
+            </div>
+            <div class="row d-flex align-items-center justify-content-center mb-4 mt-1">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    0
+                </div>
+                <div class="col d-flex align-items-center justify-content-center">
+                    <input type="range" class="form-control-range rate-range" id="repetitive_range">
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    100
+                </div>
+            </div>
+            <div class="row d-flex align-items-center justify-content-center">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    
+                </div>
+                <div class="col d-flex align-items-center justify-content-start">
+                    The chatbot stays on the topic.
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    
+                </div>
+            </div>
+            <div class="row d-flex align-items-center justify-content-center mb-4 mt-1">
+                <div class="col-3 d-flex align-items-center justify-content-end">
+                    0
+                </div>
+                <div class="col d-flex align-items-center justify-content-center">
+                    <input type="range" class="form-control-range rate-range" id="topic_range">
+                </div>
+                <div class="col-3 d-flex align-items-center justify-content-start">
+                    100
+                </div>
+            </div>
+        
+        </div>
+        <div id="instruction2-panel" class="justify-content-center mt-1 pt-3 pb-3 border-0 rounded">
+            
+            <Button type="button" class="btn btn-primary" onclick="to_chat()">NEXT</Button>
+        </div>
+
+    </div>
+
+    <div class="container-fluid text-right" id="submit-div">
+       <crowd-form id="submit-form">
+
+        <div class="row border-0 mt-3 mb-3">
+            <div class="col-3 d-flex align-items-center justify-content-end">
+                    
+            </div>
+            <div class="col d-flex align-items-center justify-content-center">
+              Thanks for your help. Please leave your feedback here.
+            </div>
+            <div class="col-3 d-flex align-items-center justify-content-start">
+                        
+            </div>
+        
+        </div>
+        <div class="row border-0 mt-3 mb-3">
+            <div class="col-3 d-flex align-items-center justify-content-end">
+                    
+            </div>
+            <div class="col d-flex align-items-center justify-content-center">
+               <textarea class="form-control" rows="5" name="feedback"></textarea>
+            </div>
+            <div class="col-3 d-flex align-items-center justify-content-start">
+                        
+            </div>
+        
+        </div>
+        <div class="row border-0 mt-3 mb-3">
+            <div class="col-3 d-flex align-items-center justify-content-end">
+                    
+            </div>
+            <div class="col d-flex align-items-center justify-content-center">
+                
+                   
+                    <crowd-button form-action="submit" variant="primary">Submit</crowd-button>
+               
+            </div>
+            <div class="col-3 d-flex align-items-center justify-content-start">
+                        
+            </div>
+        <input id="dialogue" name="dialogue" hidden>
+        <input id="rate" name="rate" hidden>
+        <input id="error-message" name="error-message" hidden>
+
+        <input id="feedback" name="quality-control" hidden>
+        
+        </div>
+        </crowd-form>
+    </div>
+    <div class="container-fluid text-center" id="welcome-panel" >
+        <div class="row border-0 mt-1 mb-2">
+            <div class="col-3"></div>
+             <div class="col d-flex align-items-center justify-content-start">
+                <b>Task introduction and instruction:</b>
+             </div>
+            <div class="col-2"></div>
+        </div>
+
+        
+    </div>
+    
+
+         
+
+
+   
+   
+</body>
+
+<footer>
+    <script>
+        let base_url = "http://127.0.0.1:8010" // change it to the real url when deploying on MTurk
+        let all_hits = ["bart","dialogpt","qc",'vanilla_dialogpt','vanilla_blenderbot_small']; // uncomment this line and comment next line for locally debugging
+        // let all_hits = ["${u0}", "${u1}", "${u2}", "${u3}", "${u4}"];  // uncomment this line and comment previous line for MTurk Deployment
+
+
+
+        let current_task = "";
+        let [total_task, counter_round, counter_task, counter_error] = [all_hits.length, 0, 0, 0];
+
+
+        let max_len = all_hits.length - 1;
+        let min_round = 0; // minimal number of rounds, in our paper it is 10
+
+        const to_complete = () => {
+            $("#rate-panel").hide();
+            $("#chatbot-panel").hide();
+    
+            $("#submit-div").show();
+        }
+        const to_rate = () => {
+            console.log($("#dialogue"+counter_task).val());
+            if(counter_round < min_round){
+                $('#warning-modal').modal('show');
+            }
+            else{
+                $(".rate-range").val(50);
+                $("#chatbot-panel").hide();
+                $("#rate-panel").show();
+            }
+            
+        }
+
+
+
+        const to_chat = () => {
+            let all_score = "";
+            $(".rate-range").each( function(){
+               all_score = all_score+$(this).val()+"#";
+            });
+            $("#score"+counter_task).val(all_score);
+            
+            console.log( $("#score"+counter_task).val())
+            if(counter_task < max_len){
+                counter_round = 0;
+                counter_task++;
+                $("#task-counter").html("You have completed conversations with <b>"+counter_task+"</b> chatbots.");
+                $("#round-counter").html("You have given <b>0</b> inputs already with this chatbot.")
+                initDialogue();
+            }
+            else{
+                to_complete();
+            }
+            
+        }
+
+
+        const post = (url,data) => {
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                        url: url,
+                        type: 'POST',
+                        data: data,
+                        timeout: 10000000,
+
+                        success: res => {
+                            resolve(res)
+                        },
+                        error: error => {
+                            reject(error)
+                        }
+                    });
+                }
+            ).catch( (error) => {
+                
+                counter_error++;
+                let error_message = $("#error-message").val();
+                let user_input = $("#send-input").val();
+                
+                error_message += "t"+counter_task+"r"+counter_round+"@@"+error.statusText+"@@"+user_input+   "###url:"+url +" || ";
+
+                $("#error-message").val(error_message);
+                $("#error-modal-body").html("<p>An error occurs (<b><i>"+error.statusText+"</i></b>) and has been recorded for further analysis.</p><p>Please close this message and re-try.</p>");
+                $("#error-modal").modal("show");
+                $("#send-btn").attr("disabled",false);
+                $("#send-input").attr("disabled",false);
+                return "error"
+                
+            })
+        }
+
+        const update_user_response = (user_reply) => {
+            let inner_html = `
+            <div class="row border-0 mt-3 mb-3 user-response">
+                <div class="col-2 invisible">
+
+                </div>
+                <div class="text-right d-flex text-dark col align-items-center justify-content-start" >
+                    <input  type="text" 
+                            class="form-control rounded align-items-center justify-content-start" 
+                            value="Sentence1" 
+                            style="background-color:  #F4F8F8" 
+                            disabled>
+                </div>
+                <div class="col-1 d-flex align-items-center justify-content-center mr-3">
+                    <button type="button" class="btn btn-info btn-circle d-flex align-items-center justify-content-center" disabled>
+                        You
+                    </button>
+                </div>
+        
+            </div>
+            `
+            $("#message-panel").append(inner_html);
+            
+            let addded_div = $(".user-response").last();
+            let msg = addded_div.children().eq(1).children().first();
+            msg.val(user_reply);
+
+            addded_div.animate({"opacity":0}, 0);
+
+
+        }
+        const update_bot_response = (bot_response) => {
+            let inner_html = `
+            <div class="row border-0 mt-3 mb-3 bot-response">
+                <div class="col-1 d-flex align-items-center justify-content-center ml-3">
+                    <button type="button" class="btn btn-secondary btn-circle d-flex align-items-center justify-content-center" disabled>
+                        Bot
+                    </button>
+                </div>
+                
+                <div class="text-left d-flex col align-items-center justify-content-start">
+                    <input  type="text" 
+                            class="form-control rounded align-items-center justify-content-start" 
+                            value="" 
+                            style="background-color: #D1EDEE"
+                            disabled>
+                </div>
+
+                <div class="col-2 invisible">
+
+                </div>
+            </div>
+            `
+            
+            $("#message-panel").append(inner_html);
+            let addded_div = $(".bot-response").last();
+            let msg = addded_div.children().eq(1).children().first();
+            msg.val(bot_response);
+            addded_div.animate({"opacity":0}, 0);
+
+            
+
+        }
+        const send_response = async () => {
+            let content = $.trim($("#send-input").val());
+            let dialogue = $("#dialogue"+counter_task).val();
+
+            console.table([content,current_task,dialogue]);
+            let target_url = base_url + "/api/model/" + current_task + "/interact"
+            console.log(target_url)
+            $("#send-input").val(content);
+            
+            if (content.length === 0){
+                $("#empty-modal").modal('show');
+                return false
+            }
+            else{
+                let data = {
+                    "text":content,
+                    "end":false,
+                    "seed": $("#seed"+counter_task).val(),
+                    "history": dialogue
+                }
+                $("#send-btn").attr("disabled",true);
+                $("#send-input").attr("disabled",true);
+
+                let result = await post(target_url,data);
+                console.table(result);
+                if(result!=="error"){
+                    
+                    $("#send-input").val("");
+                    let user_reply = result.user_input;
+                    let bot_response = result.response;
+                    update_user_response(user_reply);
+                    update_bot_response(bot_response);
+
+                    counter_round++;
+                    $("#round-counter").html("You have given <b>"+counter_round+"</b> inputs already with this chatbot. ")
+                    dialogue += "u: "+user_reply+"###"+"b: "+bot_response+"###";
+                    $("#dialogue"+counter_task).val(dialogue);
+            
+                    let addded_user_div = $(".user-response").last();
+                    let addded_bot_div = $(".bot-response").last();
+                    addded_user_div.animate(
+                        {"opacity":1}, 
+                        300,
+                        () => {
+                            addded_bot_div.animate(
+                                {"opacity":1},
+                                300,
+                                () => {
+                                    $("#send-btn").attr("disabled",false);
+                                    $("#send-input").attr("disabled",false);
+                                    let scoll_height = $("#message-panel").prop("scrollHeight");
+                                    $("#message-panel").scrollTop(scoll_height);
+                                }
+                            );
+                        }
+                    );
+                    
+                    
+                    
+                }
+                
+                $("#send-btn").attr("disabled",false);
+                $("#send-input").attr("disabled",false);
+                return true
+            }
+        }
+
+        
+        const preRender = () => {
+            let instruction_test = `
+    Your task is to have 5 conversations with a chatbot, and a different chatbot will talk to you in each conversation.
+    Before each conversation, you should think of a topic to talk about with the chatbot (your choice of topic). You will be asked to enter this topic before the conversation starts.
+    The current topic will be displayed to you throughout the conversation.
+    If the chatbot changes the topic to a new one, you should record this by updating the conversation topic using the Topic button (bottom left).
+    You are also allowed to change the topic, you should use the same button to do this (bottom left).
+    At the end of each conversation, you should tell us what you think about the chatbot.
+    In each conversation, you should type in a minimum of 10 inputs/sentences.
+    The purpose of these HITs where you will generate conversations with chatbots is to test how realistic their conversations are with users. In order for your data to be useful to us we require that your half of the conversation is also realistic. For example, your data will not be useful to us if you do the following: ###User: Hi###Bot: Hi###User: Hi###Bot: Hi ###.. and so on.
+    Another example, if you are too repetitive or your responses are not appropriate given what the chatbot has just said, this will not be a useful test for them. For example, the following conversation is not ok:###User: Hi###Bot: Hi###User: wow (not appropriate response)###Bot: I saw a good movie last night###User: wow (repetitive)###Bot: Do you like football?###User: I have two children and one dog. (not appropriate response)###.. and so on.
+    We need realistic conversations, so please do your best to talk to the bot as if the bot was another person you actually want to talk to. Obvious attempts to game the process and ones that don't make a real effort will unfortunately be rejected.
+    The chatbot may take a few seconds to respond, please be patient.
+    Please use Chrome if possible.
+    Please avoid special symbols.
+    There is a feedback box at the end of the HIT. If you encounter any problems, please enter them in this box or email our MTurk account.
+
+
+    `
+            instruction_test = $.trim(instruction_test).split('\n');
+            for (var i = 0; i < instruction_test.length; i++) {
+                let text = $.trim(instruction_test[i]);
+                text = text.replace(/###/g,"<br>");
+                let innerHTML = `<div class="row border-0"><div class="col-2"></div><div class="col-1 d-flex align-items-top justify-content-end">` 
+                                    + (i+1) 
+                                    + `.</div><div class="col d-flex align-items-top justify-content-start text-left">`
+                                    + text
+                                    + `</div><div class="col-2"></div></div>`;
+                $("#welcome-panel").append(innerHTML);
+            }
+            $("#welcome-panel").append(`
+                <div class="row border-0 mt-3 mb-3">
+                    <div class="col text-center d-flex align-items-center justify-content-center">
+                        <button class="btn-primary btn btn-sm" onclick="initDialogue();">Start</button>
+                    </div>
+                </div>`);
+            $("#welcome-panel").show();
+            $("#submit-div").hide();
+            $("#rate-panel").hide();
+            $("#chatbot-panel").show();
+
+
+        }
+
+
+        const initDialogue = () => {
+            $("#welcome-panel").hide();
+            $("#rate-panel").hide();
+            $("#message-panel").html("");
+            $("#chatbot-panel").show();
+
+            current_task = all_hits[counter_task];
+            counter_round = 0;
+            let seed = randomSeed();
+            $("#seed"+counter_task).val(seed);
+            $("#task"+counter_task).val(current_task);
+            init_topic_modal();
+   
+
+        }
+
+        const randomSeed = () => {
+            return Math.floor(Math.random()*1000) + 1;
+        }
+
+
+        const show_topic_modal = () => {
+            $("#topic-modal").modal("show");
+        }
+        const init_topic_modal = () => {
+            $("#topic-modal-body").html(`<div class="form-group">
+                    <label class="col-form-label text-sm-left font-weight-bold">Topic:</label>
+                    <input type="text" autocomplete="off" 
+                            class="form-control rounded mr-sm-1"
+                            placeholder="" 
+                            id="topic-input">
+                </div>
+                <div class="form-group">
+                    <label class="col-form-label text-sm-left font-weight-bold">What is your general feeling about this topic? Do you like it, dislike it or are you ambivalent about it?</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="topic-opinion-radio" id="topic-opinion-radio1" value="like">
+                        <label class="form-check-label" for="topic-opinion-radio1">
+                        I like it. 
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="topic-opinion-radio" id="topic-opinion-radio2" value="dislike">
+                        <label class="form-check-label" for="topic-opinion-radio2">
+                        I do not like it.
+                        </label>
+                    </div>
+                        <div class="form-check disabled">
+                        <input class="form-check-input" type="radio" name="topic-opinion-radio" id="topic-opinion-radio3" value="ambivalent">
+                        <label class="form-check-label" for="topic-opinion-radio3">
+                        I feel ambivalent about it.
+                        </label>
+                    </div>
+                </div>
+
+                <hr>
+                <h5 class="small text-left font-weight-bold font-italic" id="topic-modal-error"></h5>
+
+                <h6 class="small text-left">Remember that you and the chatbot are allowed to change topic. If the chatbot changes topic, you should press the “Topic” button (bottom left) and record this change. If you intend to change topic in your next input, then press the “Topic” button before you enter your next input.</h6>`);
+            $("#topic-modal-title").html("Please think of a topic to discuss with the chatbot and enter it below");
+            $("#topic-modal-footer").html(`<button type="button" class="btn btn-primary btn-sm" onclick="submit_topic();">Submit</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" >Close</button>`);
+            $("#send-btn").attr("disabled",true);
+            $("#send-btn").toggleClass("btn-outline-primary btn-outline-light");
+            $("#topic-modal").modal("show");
+
+        }
+        const submit_topic_changes = () => {
+            let topic_change_radio_choice = $(`input[name="topic-change-radio"]:checked`).val();
+            let topic_chatbot_radio_choice = $(`input[name="topic-chatbot-radio"]:checked`).val();
+            const record_changes = () => {
+ 
+                let topic_change_opinion_values = $("#topic_change_opinion"+counter_task).val();
+                let topic_chatbot_opinion_values = $("#topic_chatbot_opinion"+counter_task).val();
+                $("#topic_change_opinion"+counter_task).val(topic_change_opinion_values+"#"+counter_round+"@"+topic_change_radio_choice);
+                $("#topic_chatbot_opinion"+counter_task).val(topic_chatbot_opinion_values+"#"+counter_round+"@"+topic_chatbot_radio_choice);
+            }
+            if(typeof topic_change_radio_choice === "undefined" || typeof topic_chatbot_radio_choice === "undefined"){
+                $("#topic-modal-error").text("Error: Invalid selection.");
+            }
+            else if(topic_change_radio_choice === "no change"){
+                record_changes();
+                $("#topic-modal").modal("hide");
+                $(`input[name="topic-change-radio"]:checked`).prop('checked', false);
+                $(`input[name="topic-chatbot-radio"]:checked`).prop('checked', false);
+                $("#topic-modal-error").text("");
+            }
+            else if (topic_change_radio_choice === "bot change"){
+                record_changes();
+                let previous_topic = $("#topic-display").text();
+                $("#topic-modal-body").html(`<div class="form-group">
+                    <label class="col-form-label text-sm-left font-weight-bold" id="topic-chatbot-change-instruction">Topic:</label>
+                    <input type="text" autocomplete="off" 
+                            class="form-control rounded mr-sm-1"
+                            placeholder="" 
+                            id="topic-input">
+                </div>
+                <div class="form-group">
+                    <label class="col-form-label text-sm-left font-weight-bold">What is your own general feeling about this topic?</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="topic-opinion-radio" id="topic-opinion-radio1" value="like">
+                        <label class="form-check-label" for="topic-opinion-radio1">
+                        I like this new topic. 
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="topic-opinion-radio" id="topic-opinion-radio2" value="dislike">
+                        <label class="form-check-label" for="topic-opinion-radio2">
+                        I do not like this new topic.
+                        </label>
+                    </div>
+                        <div class="form-check disabled">
+                        <input class="form-check-input" type="radio" name="topic-opinion-radio" id="topic-opinion-radio3" value="ambivalent">
+                        <label class="form-check-label" for="topic-opinion-radio3">
+                        I feel ambivalent about this new topic.
+                        </label>
+                    </div>
+                </div>
+                <h5 class="small text-left font-weight-bold font-italic" id="topic-modal-error"></h5>`);
+                $("#topic-chatbot-change-instruction").text(`What has the chatbot changed the topic from `
+                    + previous_topic
+                    +` to?
+                    `)
+                $("#topic-modal-title").html("Topic changed by chatbot");
+                $("#topic-modal-footer").html(`<button type="button" class="btn btn-primary btn-sm" onclick="submit_topic();">Submit</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" >Close</button>`);
+                $("#send-btn").attr("disabled",true);
+                $("#send-btn").toggleClass("btn-outline-primary btn-outline-light");
+                $("#topic-modal").modal("show");
+
+            }
+            else {
+                record_changes();
+                init_topic_modal();
+            }
+
+        }
+
+
+        const submit_topic = () => {
+            let topic_input = $("#topic-input").val().replace(/@/g," ").replace(/#/g," ");
+            let topic_opinion_input = $(`input[name="topic-opinion-radio"]:checked`).val();
+            topic_input = $.trim(topic_input).split(/\s+/);
+            if( topic_input.length==0  || topic_input[0]===""){
+                $("#topic-modal-error").text("Error: Invalid or empty topic.");
+            }
+            else if(typeof topic_opinion_input === "undefined"){
+                $("#topic-modal-error").text("Error: Invalid selection.");
+            }
+            else{
+                $("#topic-modal").modal("hide");
+                topic_input = topic_input.join(" ");
+                let task_topic = $("#topic"+counter_task).val();
+                let task_topic_opinion = $("#topic_opinion"+counter_task).val();
+                $("#topic"+counter_task).val(task_topic+"#"+counter_round+"@"+topic_input);
+                $("#topic_opinion"+counter_task).val(task_topic_opinion+"#"+counter_round+"@"+topic_opinion_input);
+                $("#topic-display").text(topic_input);
+                let innerHTML = `
+                <div class="form-group">
+                    <label for="recipient-name" class="col-form-label font-weight-bold">What is happening to the conversation topic?</label>
+ 
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="topic-change-radio" id="topic-change-radio1" value="bot change">
+                        <label class="form-check-label" for="topic-change-radio1">
+                        The chatbot just changed the topic.
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="topic-change-radio" id="topic-change-radio2" value="user change next">
+                        <label class="form-check-label" for="topic-change-radio2">
+                        I will change the topic in my next input
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="topic-change-radio" id="topic-change-radio3" value="user change last">
+                        <label class="form-check-label" for="topic-change-radio3">
+                        I changed the topic in my last input.
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="topic-change-radio" id="topic-change-radio0" value="no change">
+                        <label class="form-check-label" for="topic-change-radio0">
+                        No change.
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="recipient-name" class="col-form-label font-weight-bold" id="topic-instruction"></label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="topic-chatbot-radio" id="topic-chatbot-radio1" value="like">
+                        <label class="form-check-label" for="topic-chatbot-radio1">
+                        The chatbot persona likes it.
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="topic-chatbot-radio" id="topic-chatbot-radio2" value="dislike">
+                        <label class="form-check-label" for="topic-chatbot-radio2">
+                        The chatbot persona dislikes it.
+                        </label>
+                    </div>
+                        <div class="form-check disabled">
+                        <input class="form-check-input" type="radio" name="topic-chatbot-radio" id="topic-chatbot-radio3" value="ambivalent">
+                        <label class="form-check-label" for="topic-chatbot-radio3">
+                        The chatbot persona is ambivalent about it.
+                        </label>
+                    </div>
+                </div>
+        
+                <h5 class="small text-left font-weight-bold font-italic" id="topic-modal-error"></h5>
+                `
+                $("#topic-modal-body").html(innerHTML);
+                $("#topic-instruction").text(`According to the chatbot statements about topic `
+                    + topic_input 
+                    +`, what do you think the chatbot's overall feeling about it was?`);
+
+                $("#topic-modal-title").html("Topic Change");
+                $("#topic-modal-footer").html(`<button type="button" class="btn btn-primary btn-sm" onclick="submit_topic_changes();">Submit</button>
+                    <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Cancel</button>`);
+               
+                $("#send-btn").toggleClass("btn-outline-primary btn-outline-light");
+                $("#send-btn").attr("disabled",false);
+            }
+            
+
+            
+            
+
+        }
+        window.onload = () => {
+            preRender();
+            let maxHeight = $(window).height();
+            let sendPanelHeight = $("#send-panel").height();
+            let instructionPanelHeight = $("#instruction-panel").height();
+            let topicPanelHeight = $("#topic-panel").height();
+            
+            $("#message-panel").height((maxHeight-sendPanelHeight-instructionPanelHeight-topicPanelHeight)*0.95);
+            //$("#message-panel").height(1000);
+            $("#message-panel").css("overflow-y","auto");
+            $("#chatbot-panel").hide();
+            for (var i = 0; i < all_hits.length; i++) {
+                let innerHTML = `
+                <input name="task###" id="task###" hidden>
+                <input name="dialogue###" id="dialogue###" hidden>
+                <input name="seed###" id="seed###" hidden>
+                <input name="score###" id="score###" hidden>
+                <input name="topic###" id="topic###" hidden>
+                <input name="topic_opinion###" id="topic_opinion###" hidden>
+                <input name="topic_change_opinion###" id="topic_change_opinion###" hidden>
+                <input name="topic_chatbot_opinion###" id="topic_chatbot_opinion###" hidden>
+                `;
+                innerHTML = innerHTML.replace(/###/g,i);
+                $("#submit-form").append(innerHTML)
+            }        
+            
+        }
+    </script>
+</footer>
+</html>
